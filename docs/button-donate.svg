@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="300" height="60" viewBox="0 0 300 60" role="img" aria-label="Donations welcome">
+  <title>Donations welcome</title>
+  <defs>
+    <linearGradient id="fill" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#46F8B0"/>
+      <stop offset="1" stop-color="#1EBEFF"/>
+    </linearGradient>
+  </defs>
+  <rect width="300" height="60" rx="14" fill="url(#fill)"/>
+  <path d="M40 43 L27.5 30 A8 8 0 0 1 40 20.5 A8 8 0 0 1 52.5 30 Z" fill="#0E1030"/>
+  <text x="68" y="38" font-family="'Segoe UI', Helvetica, Arial, sans-serif" font-size="21" font-weight="700" fill="#0E1030">Donations welcome</text>
+</svg>

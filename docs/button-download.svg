@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="300" height="60" viewBox="0 0 300 60" role="img" aria-label="Download the installer">
+  <title>Download the installer</title>
+  <defs>
+    <linearGradient id="fill" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3F49B8"/>
+      <stop offset="1" stop-color="#16194F"/>
+    </linearGradient>
+  </defs>
+  <rect width="300" height="60" rx="14" fill="url(#fill)"/>
+  <path d="M38 17 V35 M38 35 L30 27 M38 35 L46 27 M27 43 H49" fill="none" stroke="#F4F6FF" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="66" y="38" font-family="'Segoe UI', Helvetica, Arial, sans-serif" font-size="21" font-weight="700" fill="#F4F6FF">Download installer</text>
+</svg>

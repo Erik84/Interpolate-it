@@ -8,9 +8,13 @@ Pick a window, press **Start Interpolating**, and every two frames the applicati
 AI-generated frames in between: a 30 fps stream is shown at 60 fps (x2) or 120 fps (x4), whatever the application
 renders with. Videos, streams, games: if it has a window, it qualifies.
 
-**[Download the installer](https://github.com/Erik84/Interpolate-it/releases/latest/download/Interpolate-it-Setup.exe)**
-&nbsp;·&nbsp; free and open source (MIT) &nbsp;·&nbsp;
-[donations welcome](https://www.paypal.com/donate/?business=FT2K6CLC4RLBJ&no_recurring=1&item_name=Enjoying+Interpolate-it?+Feel+free+to+leave+a+donation%21+Huge+thanks%2C+it+keeps+me+motivated+to+build+more+cool+tools.&currency_code=EUR)
+<p align="center">
+  <a href="https://github.com/Erik84/Interpolate-it/releases/latest/download/Interpolate-it-Setup.exe"><img src="docs/button-download.svg" alt="Download the installer" width="300" height="60"></a>
+  &nbsp;&nbsp;
+  <a href="https://www.paypal.com/donate/?business=FT2K6CLC4RLBJ&amp;no_recurring=1&amp;item_name=Enjoying+Interpolate-it?+Feel+free+to+leave+a+donation%21+Huge+thanks%2C+it+keeps+me+motivated+to+build+more+cool+tools.&amp;currency_code=EUR"><img src="docs/button-donate.svg" alt="Donations welcome" width="300" height="60"></a>
+</p>
+
+<p align="center">Free and open source under the MIT License.</p>
 
 ## It started with GTA 6
 
@@ -31,8 +35,11 @@ Enjoy!
 ### Free, and it stays free
 
 No ads, no account, no "premium frames". If Interpolate-it made your evening smoother and you feel like saying
-thanks, [a donation is very welcome](https://www.paypal.com/donate/?business=FT2K6CLC4RLBJ&no_recurring=1&item_name=Enjoying+Interpolate-it?+Feel+free+to+leave+a+donation%21+Huge+thanks%2C+it+keeps+me+motivated+to+build+more+cool+tools.&currency_code=EUR).
-Huge thanks, it keeps me motivated to build more cool tools.
+thanks, a donation is very welcome. Huge thanks, it keeps me motivated to build more cool tools.
+
+<p align="center">
+  <a href="https://www.paypal.com/donate/?business=FT2K6CLC4RLBJ&amp;no_recurring=1&amp;item_name=Enjoying+Interpolate-it?+Feel+free+to+leave+a+donation%21+Huge+thanks%2C+it+keeps+me+motivated+to+build+more+cool+tools.&amp;currency_code=EUR"><img src="docs/button-donate.svg" alt="Donations welcome" width="300" height="60"></a>
+</p>
 
 ## Install
 
