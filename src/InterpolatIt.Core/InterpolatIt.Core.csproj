@@ -1,0 +1,25 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- The engine: capture, GPU pipeline, inference, presentation. The 26100 projection is needed for
+       GraphicsCaptureSession.MinUpdateInterval / DirtyRegionMode; no local Windows SDK is required. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows10.0.26100.0</TargetFramework>
+    <SupportedOSPlatformVersion>10.0.26100.0</SupportedOSPlatformVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Vortice.Direct3D11" />
+    <PackageReference Include="Vortice.DXGI" />
+    <PackageReference Include="Vortice.D3DCompiler" />
+    <PackageReference Include="Microsoft.Windows.AI.MachineLearning" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\InterpolatIt.Timing\InterpolatIt.Timing.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Shaders\*.hlsl" LogicalName="Shaders/%(Filename)%(Extension)" />
+  </ItemGroup>
+
+</Project>

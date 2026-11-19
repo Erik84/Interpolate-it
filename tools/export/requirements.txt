@@ -1,0 +1,5 @@
+# Export tooling. torch / torchvision / numpy / pillow come from the system Python (venv created with
+# --system-site-packages); only the ONNX pieces are installed into tools/export/.venv.
+onnx
+onnxscript
+onnxruntime-directml

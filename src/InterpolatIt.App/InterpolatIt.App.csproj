@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- The desktop app: pick a window, press Start Interpolating. All real work is in InterpolatIt.Core. -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows10.0.26100.0</TargetFramework>
+    <SupportedOSPlatformVersion>10.0.26100.0</SupportedOSPlatformVersion>
+    <UseWPF>true</UseWPF>
+    <AssemblyName>InterpolatIt</AssemblyName>
+    <RootNamespace>InterpolatIt.App</RootNamespace>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <!-- What Explorer, the taskbar and Task Manager show. The icon is drawn by tools\make-icon.ps1. -->
+    <AssemblyTitle>Interpolate-it</AssemblyTitle>
+    <ApplicationIcon>Assets\Interpolate-it.ico</ApplicationIcon>
+    <!-- Application.ThemeMode (Fluent theme following the system's light/dark setting) is still marked experimental. -->
+    <NoWarn>$(NoWarn);WPF0001</NoWarn>
+    <!-- WPF needs real culture data: with invariant globalization (switched on for the console tools in
+         Directory.Build.props) every two-way binding in a control template throws "Cannot find non-neutral
+         culture related to 'en-us'" - opening a ComboBox was enough. -->
+    <InvariantGlobalization>false</InvariantGlobalization>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\InterpolatIt.Core\InterpolatIt.Core.csproj" />
+  </ItemGroup>
+
+  <!-- The icon for the windows, and its large picture for the About window. -->
+  <ItemGroup>
+    <Resource Include="Assets\Interpolate-it.ico" />
+    <Resource Include="..\..\docs\icon.png" Link="Assets\icon.png" />
+  </ItemGroup>
+
+  <!-- Ship the exported models next to the executable when they have been built (tools\export). -->
+  <ItemGroup>
+    <Content Include="..\..\models\manifest.json" Link="models\manifest.json" CopyToOutputDirectory="PreserveNewest"
+             Condition="Exists('..\..\models\manifest.json')" />
+    <Content Include="..\..\models\*.onnx" LinkBase="models" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

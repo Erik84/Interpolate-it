@@ -1,0 +1,39 @@
+<Window x:Class="InterpolatIt.App.AboutWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="About Interpolate-it" Width="500" SizeToContent="Height" ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner" ShowInTaskbar="False" Icon="Assets/Interpolate-it.ico">
+    <StackPanel Margin="24,20,24,22">
+        <StackPanel Orientation="Horizontal">
+            <Image Source="Assets/icon.png" Width="64" Height="64" RenderOptions.BitmapScalingMode="HighQuality"/>
+            <StackPanel Margin="16,0,0,0" VerticalAlignment="Center">
+                <TextBlock Text="Interpolate-it" FontSize="24" FontWeight="SemiBold"/>
+                <TextBlock x:Name="VersionText" Opacity="0.7"/>
+            </StackPanel>
+        </StackPanel>
+
+        <TextBlock Margin="0,18,0,0" FontWeight="SemiBold" FontSize="15" Text="It started with GTA 6."/>
+        <TextBlock Margin="0,6,0,0" TextWrapping="Wrap"
+                   Text="Big screen, 120 Hz, and thirty frames per second. Thirty. In this economy."/>
+        <TextBlock Margin="0,10,0,0" TextWrapping="Wrap"
+                   Text="Waiting for a patch felt slow (about 30 fps slow), so I asked a different question: what if the missing frames simply showed up anyway? One day, one stubborn idea and a suspicious amount of help from GenAI later, this tool was built and tested. It watches a window, imagines the frames in between and slips them in before your eyes can file a complaint."/>
+        <TextBlock Margin="0,10,0,0" TextWrapping="Wrap"
+                   Text="Now it is your turn. Take your favourite low-fps content, be it a console stream, a 24 fps movie or an anime that moves like a slideshow, and give it the smoothness it always deserved. Not just GTA 6. Anything with a window."/>
+        <TextBlock Margin="0,10,0,0" TextWrapping="Wrap" Text="Enjoy!"/>
+        <TextBlock Margin="0,10,0,0" FontStyle="Italic" Text="Erik Podt, for the love of high fps"/>
+
+        <TextBlock Margin="0,18,0,0" TextWrapping="Wrap" Opacity="0.85"
+                   Text="Interpolate-it is free to use. If it made your evening smoother and you feel like saying thanks, a donation is very welcome. Huge thanks, it keeps me motivated to build more cool tools."/>
+        <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+            <Button Content="Donate" MinWidth="110" Style="{DynamicResource AccentButtonStyle}" Click="Donate_Click"
+                    ToolTip="Opens PayPal in your browser"/>
+            <Button Content="GitHub" MinWidth="90" Margin="8,0,0,0" Click="GitHub_Click"
+                    ToolTip="Source code, new versions and a place to report problems"/>
+            <Button Content="Licences" MinWidth="90" Margin="8,0,0,0" Click="Licences_Click"
+                    ToolTip="The MIT License of this application and the notices of what it builds on"/>
+        </StackPanel>
+
+        <TextBlock Margin="0,16,0,0" Opacity="0.6" FontSize="11" TextWrapping="Wrap"
+                   Text="Free and open source under the MIT License. The in-between frames are estimated with RIFE (MIT License). Not affiliated with, or endorsed by, any game or its publisher."/>
+    </StackPanel>
+</Window>

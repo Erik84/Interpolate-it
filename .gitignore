@@ -1,0 +1,32 @@
+# .NET
+bin/
+obj/
+.vs/
+*.user
+*.suo
+artifacts/
+
+# Python
+__pycache__/
+*.pyc
+tools/export/.venv/
+
+# Generated models, weights, goldens and caches (rebuild with tools/export)
+models/
+
+# Recorded capture traces and pacing logs
+traces/
+*.pacing.csv
+
+# ONNX Runtime profiling output of the benchmark
+onnxruntime_profile__*.json
+
+# Notes, memory and settings of AI coding assistants stay on the developer's machine
+CLAUDE.md
+CLAUDE.local.md
+AGENTS.md
+.claude/
+.agents/
+
+# Build output of the installer
+installer/output/

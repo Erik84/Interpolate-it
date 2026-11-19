@@ -1,0 +1,18 @@
+<Project>
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- Direct3D 11 / DXGI / HLSL compiler bindings (MIT). -->
+    <PackageVersion Include="Vortice.Direct3D11" Version="3.8.3" />
+    <PackageVersion Include="Vortice.DXGI" Version="3.8.3" />
+    <PackageVersion Include="Vortice.D3DCompiler" Version="3.8.3" />
+    <!-- Windows ML: ONNX Runtime + DirectML + the execution-provider catalog. Brings its own managed ORT
+         assembly, so Microsoft.ML.OnnxRuntime(.Managed) must not be referenced next to it. -->
+    <PackageVersion Include="Microsoft.Windows.AI.MachineLearning" Version="2.5.96" />
+    <!-- Tests -->
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageVersion Include="xunit" Version="2.9.3" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.4" />
+  </ItemGroup>
+</Project>

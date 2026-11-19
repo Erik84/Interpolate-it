@@ -1,0 +1,12 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Pure scheduling maths: no Windows, GPU or ONNX dependencies, so it is unit-tested with synthetic timestamps. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="InterpolatIt.Timing.Tests" />
+  </ItemGroup>
+
+</Project>
