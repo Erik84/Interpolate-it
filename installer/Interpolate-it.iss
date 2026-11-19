@@ -2,9 +2,20 @@
 ; Build it with tools\build-installer.ps1: that publishes the application first, puts the licence texts next to
 ; it and passes the version. Compiling this file by hand works too once artifacts\publish\Interpolate-it exists.
 
-#define AppName "Interpolate-it"
+; TestBuild (tools\build-installer.ps1 -Test): the same installer under another identity, for trying it out on
+; a PC that has the real application installed. Installing and uninstalling the real installer in a second
+; folder would take away the installed application's registration and shortcuts: both go by the AppId.
+#ifdef TestBuild
+  #define AppName "Interpolate-it installer test"
+  #define AppIdValue "{{B3C0A4E2-7A1D-4E55-9C0B-5E2D6A7F1C39}"
+  #define SetupName "Interpolate-it-Setup-test"
+#else
+  #define AppName "Interpolate-it"
+  #define AppIdValue "{{6F0C1E0B-3C57-4B0E-9A39-3D1D5A6E2F84}"
+  #define SetupName "Interpolate-it-Setup"
+#endif
 #ifndef AppVersion
-  #define AppVersion "1.0.0"
+  #define AppVersion "1.1.0"
 #endif
 #define AppPublisher "Erik Podt"
 #define AppUrl "https://github.com/Erik84/Interpolate-it"
@@ -15,7 +26,7 @@
 
 [Setup]
 ; Identifies the application to Windows: never change it, or an update installs next to the old version.
-AppId={{6F0C1E0B-3C57-4B0E-9A39-3D1D5A6E2F84}
+AppId={#AppIdValue}
 AppName={#AppName}
 AppVersion={#AppVersion}
 AppVerName={#AppName} {#AppVersion}
@@ -46,7 +57,7 @@ UninstallDisplayIcon={app}\{#AppExe}
 UninstallDisplayName={#AppName}
 WizardStyle=modern
 OutputDir=output
-OutputBaseFilename=Interpolate-it-Setup
+OutputBaseFilename={#SetupName}
 Compression=lzma2/max
 SolidCompression=yes
 CloseApplications=yes

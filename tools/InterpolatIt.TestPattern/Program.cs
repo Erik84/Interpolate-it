@@ -88,6 +88,11 @@ internal static unsafe class Program
             if ((Flags & 2) && p.x > Size.x - 60 && p.x < Size.x - 40 && p.y > Size.y - 60 && p.y < Size.y - 40)
                 c = float3(1, 1, 1);
 
+            // optional marker: a white square that is there while the beep sounds (--beep), so that a recording
+            // can be checked for sound and picture belonging together
+            if ((Flags & 4) && p.x > Size.x - 160 && p.x < Size.x - 100 && p.y > Size.y - 100 && p.y < Size.y - 40)
+                c = float3(1, 1, 1);
+
             // optional static "HUD" block, as games draw over moving content
             if ((Flags & 1) && p.x > Size.x - 220 && p.x < Size.x - 20 && p.y > 20 && p.y < 80)
                 c = lerp(c, ((uint)p.x / 4 + (uint)p.y / 4) % 2 ? float3(1, 0.8, 0.1) : float3(0.1, 0.1, 0.1), 0.85);
@@ -132,6 +137,8 @@ internal static unsafe class Program
                                          only a small square in the corner toggles
                     [--jitter P]         (with --every N) each frame comes one refresh late with probability P, the
                                          way frames of a network stream do; the content itself stays on schedule
+                    [--beep [--beep-level DB]]     a soft beep of 0.15 s every second (880 Hz, -40 dBFS unless said
+                                         otherwise) and a white square in the bottom-right corner while it sounds
                     [--pause-at S --pause-for S]   stop producing frames for a while
                     [--hang-at S --hang-for S]     stop pumping window messages for a while (hung application)
                 """);
@@ -207,6 +214,20 @@ internal static unsafe class Program
 
         Console.WriteLine($"{title}: client {clientW}x{clientH} at ({posX},{posY}), display {1 / refresh:F3} Hz" +
                           (every > 0 ? $", new frame every {every} refreshes" : ""));
+
+        // The beep: one second of sound (a short tone, then silence) played over and over by Windows. The square in
+        // the picture goes by the moment the playing was started; the sound itself comes a few tens of milliseconds
+        // after that, which is the player's and the audio device's doing.
+        bool beep = a.ContainsKey("beep");
+        double beepStart = 0;
+        GCHandle beepWave = default;
+        if (beep)
+        {
+            beepWave = GCHandle.Alloc(BeepWave(D("beep-level", -40)), GCHandleType.Pinned);
+            PlaySoundW(beepWave.AddrOfPinnedObject(), 0, SoundAsync | SoundNoDefault | SoundMemory | SoundLoop);
+            beepStart = Qpc.Now;
+            log?.WriteLine(string.Create(CultureInfo.InvariantCulture, $"beep,0,{beepStart:F6},0"));
+        }
 
         var random = new Random(4242);
         double start = Qpc.Now, accumulator = 0, nextVariable = start;
@@ -289,10 +310,10 @@ internal static unsafe class Program
                 BoxX = 40 + (boxPhase < boxSpan ? boxPhase : 2 * boxSpan - boxPhase),
                 Frame = (uint)index,
                 Gray = (uint)(index ^ (index >> 1)) & 0xFFFF,
-                Flags = (hud ? 1u : 0u) | (blipOn ? 2u : 0u),
+                Flags = (hud ? 1u : 0u) | (blipOn ? 2u : 0u) | (beep && (now - beepStart) % BeepPeriod < BeepLength ? 4u : 0u),
                 Scene = scene,
             };
-            lock (gpu.Sync)
+            using (gpu.UseContext())
             {
                 var ctx = gpu.Context;
                 ctx.UpdateSubresource(in p, constants);
@@ -314,7 +335,39 @@ internal static unsafe class Program
                 log?.WriteLine(string.Create(CultureInfo.InvariantCulture, $"frame,{index},{now:F6},{p.Gray}"));
             }
         }
+        if (beep)
+        {
+            PlaySoundW(0, 0, 0);            // stop the sound before its memory is let go
+            beepWave.Free();
+        }
         Console.WriteLine($"done: {drawn + 1} frames in {Qpc.Now - start:F2} s");
         return 0;
+    }
+
+    public const double BeepPeriod = 1.0, BeepLength = 0.15, BeepFrequency = 880;
+    private const uint SoundAsync = 0x1, SoundNoDefault = 0x2, SoundMemory = 0x4, SoundLoop = 0x8;
+
+    [DllImport("winmm.dll", ExactSpelling = true)]
+    private static extern bool PlaySoundW(nint sound, nint module, uint flags);
+
+    /// <summary>A WAV file in memory: one second, 48 kHz 16-bit stereo, a tone with soft edges at its start.</summary>
+    private static byte[] BeepWave(double levelDb)
+    {
+        const int rate = 48000;
+        int frames = (int)(BeepPeriod * rate), burst = (int)(BeepLength * rate), fade = rate / 200;
+        var wave = new byte[44 + frames * 4];
+        using var w = new BinaryWriter(new MemoryStream(wave));
+        w.Write("RIFF"u8); w.Write(36 + frames * 4); w.Write("WAVE"u8);
+        w.Write("fmt "u8); w.Write(16); w.Write((short)1); w.Write((short)2); w.Write(rate); w.Write(rate * 4); w.Write((short)4); w.Write((short)16);
+        w.Write("data"u8); w.Write(frames * 4);
+        double amplitude = 32767 * Math.Pow(10, levelDb / 20);
+        for (int i = 0; i < frames; i++)
+        {
+            double gain = i >= burst ? 0 : Math.Min(1.0, Math.Min(i, burst - 1 - i) / (double)fade);
+            short sample = (short)Math.Round(amplitude * gain * Math.Sin(2 * Math.PI * BeepFrequency * i / rate));
+            w.Write(sample);
+            w.Write(sample);
+        }
+        return wave;
     }
 }

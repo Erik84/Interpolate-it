@@ -34,6 +34,10 @@ public sealed class EngineOptions
     /// <see cref="Gpu.VideoEnhancer"/>). It can be switched while running.</summary>
     public bool Enhance { get; init; }
 
+    /// <summary>Recordings get the sound of the application the target window belongs to (not the rest of the
+    /// system). When Windows will not capture it, the recording is made without sound.</summary>
+    public bool RecordSound { get; init; } = true;
+
     /// <summary>Largest inference resolution in pixels (width x height); the governor never goes above it.</summary>
     public int MaxInferencePixels { get; init; } = 1280 * 704;
 

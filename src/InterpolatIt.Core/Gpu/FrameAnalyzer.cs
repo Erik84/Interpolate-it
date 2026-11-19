@@ -131,7 +131,7 @@ public sealed unsafe class FrameAnalyzer : IDisposable
             HasPrev = hasPrev ? 1u : 0u,
         };
 
-        lock (_gpu.Sync)
+        using (_gpu.UseContext())
         {
             ctx.UpdateSubresource(in p, _constants);
             ctx.CSSetShader(_shader);
@@ -148,7 +148,7 @@ public sealed unsafe class FrameAnalyzer : IDisposable
         _gpu.WaitForGpu();      // so the Map below returns at once and the lock is never held across a stall
 
         FrameStats stats;
-        lock (_gpu.Sync)
+        using (_gpu.UseContext())
         {
             var map = ctx.Map(_staging, 0, MapMode.Read);
             try

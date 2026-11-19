@@ -71,7 +71,7 @@
             </Grid.ColumnDefinitions>
             <Button x:Name="RecordButton" Content="Record" MinWidth="128" IsEnabled="False" Click="Record_Click"/>
             <TextBlock x:Name="RecordText" Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center" TextWrapping="Wrap"
-                       Opacity="0.7" Text="Ctrl+Alt+R  ·  MP4 of what the window shows, up to the display's frame rate"/>
+                       Opacity="0.7" Text="Ctrl+Alt+R  ·  MP4 of what the window shows, with its sound, up to the display's frame rate"/>
         </Grid>
 
         <Border Margin="0,18,0,0" Padding="16,12,16,14" CornerRadius="8" BorderThickness="1" BorderBrush="#40808080">

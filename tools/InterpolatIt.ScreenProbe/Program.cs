@@ -171,7 +171,9 @@ internal static unsafe class Program
                     {
                         nint top = User32.GetAncestor(User32.WindowFromPoint(point), User32.GA_ROOT);
                         if (top == window.Handle) continue;
-                        coveredBy = "another window";       // which one is the user's business, not this log's
+                        // Which window is the user's business, not this log's - except Windows' own lock screen:
+                        // "the PC is locked" saves a search for a window that nobody can see.
+                        coveredBy = IsLockScreen(top) ? "the lock screen (the PC is locked)" : "another window";
                         coveredAt = Qpc.Now - start;
                         break;
                     }
@@ -301,6 +303,14 @@ internal static unsafe class Program
     /// Cells: white, black, 16 Gray-code bits, black, white. One grey cell means an in-between picture of two
     /// consecutive frames; its brightness is the timestep.
     /// </summary>
+    /// <summary>Is this the window of Windows' lock screen? (Nothing on the desktop can be measured behind it.)</summary>
+    private static bool IsLockScreen(nint hwnd)
+    {
+        User32.GetWindowThreadProcessId(hwnd, out uint processId);
+        try { return System.Diagnostics.Process.GetProcessById((int)processId).ProcessName.Equals("LockApp", StringComparison.OrdinalIgnoreCase); }
+        catch (Exception e) when (e is ArgumentException or InvalidOperationException) { return false; }
+    }
+
     private static void DecodeStrip(byte* row, out bool valid, out int index, out double t, out int mids)
     {
         Span<double> v = stackalloc double[Cells];

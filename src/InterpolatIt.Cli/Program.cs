@@ -42,8 +42,10 @@ internal static class Program
             InterpolatIt.Cli <command> [options]
 
               list-windows                         windows that can be captured
-              find-free-area --size WxH            a spot on the screen no window is using (prints "X,Y";
-                                                   exit code 1 when there is none) - for the test tools
+              find-free-area --size WxH [--why [--at X,Y]]
+                                                   a spot on the screen no window is using (prints "X,Y";
+                                                   exit code 1 when there is none) - for the test tools.
+                                                   --why: which programs' windows are in the way (no titles)
               trace  --title TEXT | --hwnd 0xHEX   record what the capture delivers
                      [--seconds 10] [--csv FILE]
               run    --title TEXT | --hwnd 0xHEX   cover the window with the overlay
@@ -55,7 +57,8 @@ internal static class Program
                      [--toggle-every S]            switch interpolation off/on every S seconds
                      [--hud-every S]               show/hide the readout every S seconds
                      [--enhance-every S]           switch the clean-up on/off every S seconds
-                     [--record FILE [--record-after S] [--record-for S]]   MP4 of what the window shows
+                     [--record FILE [--record-after S] [--record-for S] [--no-sound]]   MP4 of what the window
+                                                   shows, with the sound of its application
                      [--trace] [--dump-frames DIR]                         diagnostics
                      [--phase 0..1] [--sync 0|1] [--no-calibrate]   presentation timing experiments
             """);
@@ -85,6 +88,7 @@ internal static class Program
         finally { gch.Free(); }
 
         var occupied = new List<RECT>();
+        var kinds = new List<(RECT Rect, string Kind)>();
         foreach (nint hwnd in handles)
         {
             if (!User32.IsWindowVisible(hwnd) || User32.IsIconic(hwnd) || Dwm.IsCloaked(hwnd)) continue;
@@ -95,6 +99,20 @@ internal static class Program
             if (!Dwm.TryGetExtendedFrameBounds(hwnd, out RECT r) && !User32.GetWindowRect(hwnd, out r)) continue;
             if (r.Width < 8 || r.Height < 8) continue;
             occupied.Add(r);
+            if (a.Has("why")) kinds.Add((r, KindOf(hwnd)));
+        }
+        if (a.Has("why"))
+        {
+            // What is in the way, largest first: which program and what kind of window - never its title.
+            foreach (var (r, kind) in kinds.OrderByDescending(k => (long)k.Rect.Width * k.Rect.Height).Take(12))
+                Console.Error.WriteLine($"  {r.Width}x{r.Height} at {r.Left},{r.Top}  {kind}");
+            if (a.Get("at") is string at)
+            {
+                string[] xy = at.Split(',');
+                var point = new POINT { X = int.Parse(xy[0], CultureInfo.InvariantCulture), Y = int.Parse(xy[1], CultureInfo.InvariantCulture) };
+                nint top = User32.GetAncestor(User32.WindowFromPoint(point), User32.GA_ROOT);
+                Console.Error.WriteLine($"  at {at}, on top: {(top == 0 ? "nothing" : KindOf(top))}");
+            }
         }
 
         nint monitor = User32.MonitorFromWindow(User32.GetShellWindow(), User32.MONITOR_DEFAULTTONEAREST);
@@ -118,6 +136,19 @@ internal static class Program
             }
         }
         return 1;
+    }
+
+    /// <summary>The program a window belongs to, its window class and how it is layered (for --why).</summary>
+    private static string KindOf(nint hwnd)
+    {
+        User32.GetWindowThreadProcessId(hwnd, out uint processId);
+        string program;
+        try { program = System.Diagnostics.Process.GetProcessById((int)processId).ProcessName; }
+        catch (Exception e) when (e is ArgumentException or InvalidOperationException) { program = "?"; }
+        uint ex = User32.GetExStyle(hwnd);
+        string flags = ((ex & User32.WS_EX_TOPMOST) != 0 ? " always-on-top" : "") + ((ex & User32.WS_EX_LAYERED) != 0 ? " layered" : "")
+                       + ((ex & User32.WS_EX_TRANSPARENT) != 0 ? " click-through" : "") + ((ex & User32.WS_EX_TOOLWINDOW) != 0 ? " tool" : "");
+        return $"{program}, class {User32.GetClassName(hwnd)}{flags}";
     }
 
     [System.Runtime.InteropServices.UnmanagedCallersOnly]

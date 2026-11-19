@@ -75,7 +75,7 @@ public sealed unsafe class Synthesizer : IDisposable
         _everythingChanged = gpu.Device.CreateTexture2D(new Texture2DDescription(Format.R8_UNorm, 1, 1, 1, 1, BindFlags.ShaderResource));
         _everythingChangedSrv = gpu.Device.CreateShaderResourceView(_everythingChanged);
         byte one = 255;
-        lock (gpu.Sync) gpu.Context.UpdateSubresource(_everythingChanged, 0, null, (nint)(&one), 1, 1);
+        using (gpu.UseContext()) gpu.Context.UpdateSubresource(_everythingChanged, 0, null, (nint)(&one), 1, 1);
     }
 
     /// <summary>(Re)allocates the field texture for an inference size.</summary>
@@ -101,7 +101,7 @@ public sealed unsafe class Synthesizer : IDisposable
         if (_field is null) throw new InvalidOperationException("Configure must be called first.");
         uint rowPitch = (uint)(FieldWidth * sizeof(ushort));
         uint slicePitch = rowPitch * (uint)FieldHeight;
-        lock (_gpu.Sync)
+        using (_gpu.UseContext())
         {
             for (uint slice = 0; slice < 4; slice++)
                 _gpu.Context.UpdateSubresource(_field, slice, null, flow + (nint)(slice * slicePitch), rowPitch, slicePitch);
@@ -130,7 +130,7 @@ public sealed unsafe class Synthesizer : IDisposable
 
         var p = new MaskParams { MaxX = contentWidth - 1, MaxY = contentHeight - 1, Threshold = UnchangedThreshold };
         var ctx = _gpu.Context;
-        lock (_gpu.Sync)
+        using (_gpu.UseContext())
         {
             ctx.UpdateSubresource(in p, _maskConstants);
             ctx.OMSetRenderTargets(_maskRtv!);
@@ -170,7 +170,7 @@ public sealed unsafe class Synthesizer : IDisposable
             SnapFlowSquared = SnapFlowPixels * SnapFlowPixels,
         };
         var ctx = _gpu.Context;
-        lock (_gpu.Sync)
+        using (_gpu.UseContext())
         {
             ctx.UpdateSubresource(in p, _constants);
             ctx.OMSetRenderTargets(target);

@@ -10,6 +10,7 @@ internal static class RunCommand
         => r is null ? "nothing recorded"
             : r.Error is not null ? $"FAILED: {r.Error}"
             : $"{r.Codec} {r.Width}x{r.Height}, {r.Frames} frames in {r.Seconds:F2} s ({(r.Seconds > 0 ? r.Frames / r.Seconds : 0):F1} fps), {r.Dropped} dropped" +
+              (r.Sound ? ", with sound" : r.SoundProblem is null ? ", without sound" : $", without sound ({r.SoundProblem})") +
               (r.EndedBecause is null ? "" : $", ended because {r.EndedBecause}");
 
     public static int Run(Args a)
@@ -27,6 +28,7 @@ internal static class RunCommand
             PacingLogPath = a.Get("log"),
             ShowHud = a.Has("hud"),
             Enhance = a.Has("enhance"),
+            RecordSound = !a.Has("no-sound"),
             PresentPhase = a.GetDouble("phase", 0.5),
             SyncInterval = a.GetInt("sync", 1),
             CalibrateLag = !a.Has("no-calibrate"),

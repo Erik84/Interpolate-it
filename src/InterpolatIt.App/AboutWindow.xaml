@@ -24,10 +24,11 @@
 
         <TextBlock Margin="0,18,0,0" TextWrapping="Wrap" Opacity="0.85"
                    Text="Interpolate-it is free to use. If it made your evening smoother and you feel like saying thanks, a donation is very welcome. Huge thanks, it keeps me motivated to build more cool tools."/>
-        <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
-            <Button Content="Donate" MinWidth="110" Style="{DynamicResource AccentButtonStyle}" Click="Donate_Click"
-                    ToolTip="Opens PayPal in your browser"/>
-            <Button Content="GitHub" MinWidth="90" Margin="8,0,0,0" Click="GitHub_Click"
+        <Button Content="♥   Donations welcome" Height="48" FontSize="17" FontWeight="SemiBold" Margin="0,14,0,0"
+                HorizontalAlignment="Stretch" Style="{DynamicResource AccentButtonStyle}" Click="Donate_Click"
+                ToolTip="Opens PayPal in your browser"/>
+        <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+            <Button Content="GitHub" MinWidth="90" Click="GitHub_Click"
                     ToolTip="Source code, new versions and a place to report problems"/>
             <Button Content="Licences" MinWidth="90" Margin="8,0,0,0" Click="Licences_Click"
                     ToolTip="The MIT License of this application and the notices of what it builds on"/>

@@ -154,18 +154,19 @@ internal sealed class Presenter
                 if (had && frame.Frame.Width == chain.Width && frame.Frame.Height == chain.Height)
                 {
                     uint presentId;
-                    lock (ctx.Gpu.Sync)
+                    using (ctx.Gpu.UseContext())
                     {
                         ctx.Gpu.Context.CopyResource(chain.BackBuffer, frame.Frame.Texture);
                         ctx.DrawHud?.Invoke(chain);
                         chain.Present(ctx.SyncInterval);
                         presentId = chain.LastPresentCount;
-                        // The recording takes the frame itself (without the fps readout), stamped with the
-                        // refresh it is shown on. While the overlay is still cloaked the window's own frames
-                        // are what is on screen, and the pipeline records those.
-                        if (!ctx.Overlay.IsCloaked)
-                            ctx.Recorder?.AddFrame(frame.Frame.Texture, frame.Frame.Width, frame.Frame.Height, tick + lag * period);
                     }
+                    // The recording takes the frame itself (without the fps readout), stamped with the refresh
+                    // it is shown on. While the overlay is still cloaked the window's own frames are what is on
+                    // screen, and the pipeline records those. (Outside the context scope: the recorder has a lock
+                    // of its own, which Media Foundation's callbacks take too.)
+                    if (!ctx.Overlay.IsCloaked)
+                        ctx.Recorder?.AddFrame(frame.Frame.Texture, frame.Frame.Width, frame.Frame.Height, tick + lag * period);
                     double now = Qpc.Now;
                     ctx.Stats.Presented.Mark(now);
                     lastPresent = now;

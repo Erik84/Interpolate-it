@@ -7,12 +7,18 @@ namespace InterpolatIt.Core.Gpu;
 /// <summary>
 /// The single Direct3D 11 device shared by capture, analysis, synthesis and presentation.
 /// <para>
-/// The immediate context is not thread-safe: every multi-call sequence takes <see cref="Sync"/>, and nothing
-/// blocks on the GPU while holding it — use <see cref="WaitForGpu"/> (outside the lock) before a read-back.
+/// The immediate context is one piece of state that several threads use: the pipeline, the presenter, and -
+/// while a recording runs - Media Foundation's own threads: the video encoder works on this device (see
+/// <c>Mp4Recorder</c>) and reads our textures through this same context. Every sequence of calls therefore runs
+/// inside <see cref="UseContext"/>, which holds Direct3D's own multithread lock: that is the lock Media
+/// Foundation takes as well, so a sequence of ours is never cut in two by a call of theirs. Nothing blocks on
+/// the GPU while inside — use <see cref="WaitForGpu"/> (outside) before a read-back.
 /// </para>
 /// </summary>
 public sealed class GpuDevice : IDisposable
 {
+    private readonly ID3D11Multithread? _multithread;
+    private readonly Lock _sync = new();
     private readonly ID3D11DeviceContext4? _context4;
     private readonly ID3D11Fence? _fence;
     private readonly ID3D11Query? _eventQuery;
@@ -22,7 +28,31 @@ public sealed class GpuDevice : IDisposable
     public ID3D11Device Device { get; }
     public ID3D11DeviceContext Context { get; }
     public AdapterDescription1 Adapter { get; }
-    public Lock Sync { get; } = new();
+
+    /// <summary>
+    /// Exclusive use of the immediate context until the returned scope is disposed
+    /// (<c>using (gpu.UseContext()) { ... }</c>). Re-entrant. Do not take other locks that a Media Foundation
+    /// callback may hold while inside.
+    /// </summary>
+    public ContextScope UseContext() => new(this);
+
+    public readonly struct ContextScope : IDisposable
+    {
+        private readonly GpuDevice _gpu;
+
+        internal ContextScope(GpuDevice gpu)
+        {
+            _gpu = gpu;
+            gpu._sync.Enter();
+            gpu._multithread?.Enter();
+        }
+
+        public void Dispose()
+        {
+            _gpu._multithread?.Leave();
+            _gpu._sync.Exit();
+        }
+    }
 
     /// <summary>True when GPU completion is awaited through a D3D11.4 fence (an event query is the fallback).</summary>
     public bool UsesFence => _fence is not null;
@@ -33,8 +63,9 @@ public sealed class GpuDevice : IDisposable
         Context = context;
         Adapter = adapter;
 
-        using (var mt = device.QueryInterfaceOrNull<ID3D11Multithread>())
-            mt?.SetMultithreadProtected(true);      // insurance for calls made by WGC on its own threads
+        // Calls made on other threads (the capture's, Media Foundation's) are serialised by Direct3D itself.
+        _multithread = device.QueryInterfaceOrNull<ID3D11Multithread>();
+        _multithread?.SetMultithreadProtected(true);
 
         var device5 = device.QueryInterfaceOrNull<ID3D11Device5>();
         _context4 = context.QueryInterfaceOrNull<ID3D11DeviceContext4>();
@@ -104,7 +135,7 @@ public sealed class GpuDevice : IDisposable
         if (_fence is not null)
         {
             ulong value;
-            lock (Sync)
+            using (UseContext())
             {
                 value = ++_fenceValue;
                 _context4!.Signal(_fence, value);
@@ -115,7 +146,7 @@ public sealed class GpuDevice : IDisposable
             return;
         }
 
-        lock (Sync)
+        using (UseContext())
         {
             Context.End(_eventQuery!);
             Context.Flush();
@@ -123,7 +154,7 @@ public sealed class GpuDevice : IDisposable
         var spin = new SpinWait();
         while (true)
         {
-            lock (Sync)
+            using (UseContext())
             {
                 if (Context.GetData(_eventQuery!, AsyncGetDataFlags.DoNotFlush, out int done) && done != 0)
                     return;
@@ -139,7 +170,7 @@ public sealed class GpuDevice : IDisposable
             BindFlags.None, ResourceUsage.Staging, CpuAccessFlags.Read);
         using var staging = Device.CreateTexture2D(desc);
         var pixels = new byte[width * height * 4];
-        lock (Sync)
+        using (UseContext())
         {
             Context.CopySubresourceRegion(staging, 0, 0, 0, 0, texture, 0, new Vortice.Mathematics.Box(0, 0, 0, width, height, 1));
             var map = Context.Map(staging, 0, MapMode.Read);
@@ -161,6 +192,7 @@ public sealed class GpuDevice : IDisposable
 
     public void Dispose()
     {
+        _multithread?.Dispose();
         _fence?.Dispose();
         _eventQuery?.Dispose();
         _context4?.Dispose();

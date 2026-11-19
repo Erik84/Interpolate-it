@@ -83,7 +83,7 @@ public sealed class FrameStore : IDisposable
         var slot = _real[_nextReal];
         _nextReal = (_nextReal + 1) % _real.Length;
         int w = Math.Min(captured.ContentWidth, Width), h = Math.Min(captured.ContentHeight, Height);
-        lock (_gpu.Sync)
+        using (_gpu.UseContext())
         {
             _gpu.Context.CopySubresourceRegion(slot.Texture, 0, 0, 0, 0, captured.Texture, 0,
                 new Vortice.Mathematics.Box(0, 0, 0, w, h, 1));

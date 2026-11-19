@@ -21,7 +21,7 @@
     <ArtifactsPath>$(MSBuildThisFileDirectory)artifacts</ArtifactsPath>
 
     <Product>Interpolate-it</Product>
-    <Version>1.0.0</Version>
+    <Version>1.1.0</Version>
     <Authors>Erik Podt</Authors>
     <Company>Erik Podt</Company>
     <Copyright>Free and open source under the MIT License</Copyright>

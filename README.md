@@ -71,7 +71,7 @@ DirectML but have not been tried on such hardware: reports are welcome under *Is
 | Interpolation on | Ctrl+Alt+I | Switches the generated frames on and off at once. Off shows the real window untouched; capture and the network stay loaded, so on is immediate. With nothing running, the hotkey starts on the window you are looking at. |
 | Show detected, target and actual fps | Ctrl+Alt+F | Draws a small readout in the top-left corner of the target window: the frame rate detected in the source, the output rate being aimed for and the rate actually reaching the screen. |
 | Clean up compressed video | Ctrl+Alt+H | For streams and other heavily compressed video: every source frame first goes through the graphics driver's video enhancement, which removes compression artifacts and sharpens, and the in-between frames are made from the cleaned-up frames. This is NVIDIA's RTX Video Super Resolution, so it needs an RTX card and the feature switched on in the NVIDIA app (System > Video > RTX Video Enhancement > Super Resolution; its quality level is chosen there). The line under the switch tells whether the driver is really doing it and what it costs. |
-| Record | Ctrl+Alt+R | Writes what the window shows to an MP4 file in `Videos\Interpolate-it`, at the rate it is shown: up to the display's refresh rate, so 120 frames per second on a 120 Hz display. Hardware-encoded (H.264 up to 2560x1440 at 120 fps, HEVC above), without the fps readout, without sound. Press again to stop. |
+| Record | Ctrl+Alt+R | Writes what the window shows to an MP4 file in `Videos\Interpolate-it`, at the rate it is shown: up to the display's refresh rate, so 120 frames per second on a 120 Hz display. Hardware-encoded (H.264 up to 2560x1440 at 120 fps, HEVC above), without the fps readout. The sound of the window's application goes with it, and only that: nothing else that plays on the PC ends up in the file, and sound and picture are put together again there (the picture's delay is made up for). Press again to stop. |
 
 The output rate is always one the display can show evenly, so the requested factor is rounded to the nearest
 rate that divides the refresh rate. On a 120 Hz display:
@@ -143,6 +143,10 @@ target window --Windows.Graphics.Capture--> real frames on the GPU, stamped with
 - **Presentation.** One decision per display refresh, woken by the compositor clock. A present made in refresh
   interval r is on the glass at r + 2 (measured, and re-checked continuously with DXGI frame statistics); a
   frame that is ready is presented at the start of the interval so that a busy GPU cannot make it miss.
+- **Recording.** Every picture that goes to the screen is also turned into a video frame (NV12, BT.709) by a
+  small shader and handed to the hardware encoder, which works on the same Direct3D device, with the time it
+  is shown as its timestamp. The sound is Windows' loopback capture of the one application; it is written
+  later by the playback delay, so that the file has sound and picture together.
 - **Backends.** One ONNX Runtime code path through Windows ML; the execution provider is picked from what the
   machine has.
 
@@ -183,9 +187,14 @@ Everything is checked against what actually reaches the screen, not against what
   sources that misbehave the way real ones do: blinking near-copies, frames a refresh late, a pause.
 - `tools\test-app.ps1` — the application itself: start, on/off, fps readout, clean-up, recording
   (`-AppPath` tests an installed copy).
+- `tools\test-app-record.ps1` — the application records the pattern twice in one session and the file is
+  checked frame by frame; needs no room on the screen.
 - `tools\InterpolatIt.Bench` — inference and synthesis against golden frames from PyTorch, per backend;
   `--window WxH` for the cost of every stage at a window size, `--record-probe WxH` for the recorder and
   `--enhance-probe WxH` for the clean-up step at a picture size (none of them needs a window).
+- `tools\analyze_recording.py` — reads a recording of the pattern back, frame by frame: is every frame a
+  picture, with the bar where its timestamp says it is; and (with the pattern's `--beep` option) is the sound
+  there, as long as the picture, with the beeps where the picture shows them?
 - `dotnet test` — the timing library (cadence lock, pacing, scheduling) against synthetic timestamps.
 - `InterpolatIt.Cli run --title <text> --factor 2 [--hud] [--enhance] [--log pacing.csv] [--trace]` — the engine without the UI.
 - `tools\run-offscreen.ps1` — the engine on a test pattern parked beyond the edge of the screen, for checks
@@ -195,7 +204,9 @@ Typical probe results on a 120 Hz display (1280x720 pattern): 30 fps x2 → 60 p
 exactly 2 refreshes, bar within 0.7 px of the exact half-way positions; 25 fps x4 → 119.3 pictures/s, motion
 within 1.1 px (p99) of a straight line; static grid identical to the original in every case; with the clean-up
 on, 60 fps x2 → 120.0 pictures/s. The recorder keeps up with 120 pictures per second from 1920x1080 (H.264,
-22 Mbit/s) to 3840x2160 (HEVC, 60 Mbit/s) and 7680x2160 without skipping a frame (RTX 4080 SUPER).
+22 Mbit/s) to 3840x2160 (HEVC, 60 Mbit/s) and 7680x2160 without skipping a frame (RTX 4080 SUPER). A
+one-minute recording of 30 fps x4 holds 7177 frames, every one with the bar within 1.1 px of its place, and
+sound exactly as long as the picture.
 
 ## Repository layout
 
@@ -216,7 +227,7 @@ models\                    generated ONNX files and manifest (not in git; part o
 - Automatic choice of the inference resolution from measured load (it is fixed at up to 1280x704 for now), and
   preparing networks in the background instead of at the moment they are first needed.
 - Covering only the video inside a page instead of the whole window.
-- Sound in recordings. A backend picker in the UI, tray icon, configurable hotkeys. HDR.
+- A backend picker in the UI, tray icon, configurable hotkeys. HDR.
 - Clean-up of compressed video on AMD and Intel cards (their drivers have their own enhancement), a choice of
   quality inside the app, and showing a small window's picture enlarged.
 

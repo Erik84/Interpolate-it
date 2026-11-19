@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.Globalization;
 using System.Text.Json;
 using InterpolatIt.Core.Gpu;
@@ -53,13 +53,14 @@ internal static class Program
             if (RaisePriority) Console.WriteLine($"GPU scheduling: {device.RaiseSchedulingPriority()}");
             return EnhanceProbe.Run(device, EnhanceSizes, EnhanceScale, EnhancePicture, opt.OutDir, EnhanceSeconds, EnhanceRate, EnhanceWatch);
         }
+        if (AudioSeconds > 0) return AudioProbe.Run(AudioSeconds);
         if (HudOut is not null)
         {
             // The fps readout exactly as a session draws it, on a plain background instead of a window.
             using var device = GpuDevice.Create();
             using var hud = new InterpolatIt.Core.Presentation.Hud(device);
             using var picture = new GpuImage(device, 420, 150, null, renderTarget: true);
-            lock (device.Sync)
+            using (device.UseContext())
             {
                 device.Context.ClearRenderTargetView(picture.Target!, new Vortice.Mathematics.Color4(0.25f, 0.35f, 0.5f, 1f));
                 hud.SetText(InterpolatIt.Core.Presentation.Hud.FpsLines(59.94, 120, 119.6), scale: 2);
@@ -333,6 +334,7 @@ internal static class Program
     private static double EnhanceRate = 60;
     private static bool RaisePriority;      // --gpu-priority: ask for the scheduling priority a session asks for
     private static bool EnhanceWatch;       // --enhance-watch: does the same input keep giving the same output
+    private static double AudioSeconds;     // --audio-probe [S]: capture this process's own (inaudibly soft) sound
 
     /// <summary>
     /// Times every stage of the pipeline for a window of the given size, without a window: the inference
@@ -373,7 +375,7 @@ internal static class Program
             synthesizer.Render(tex0.View, tex1.View, w, h, w, h, target.Target!);
             gpu.WaitForGpu();
             long t4 = Stopwatch.GetTimestamp();
-            lock (gpu.Sync) gpu.Context.CopyResource(copy.Texture, src.Texture);
+            using (gpu.UseContext()) gpu.Context.CopyResource(copy.Texture, src.Texture);
             gpu.WaitForGpu();
             long t5 = Stopwatch.GetTimestamp();
             if (i >= warmup)
@@ -654,6 +656,10 @@ internal static class Program
                 case "--enhance-rate": EnhanceRate = double.Parse(args[++i], CultureInfo.InvariantCulture); break;
                 case "--gpu-priority": RaisePriority = true; break;
                 case "--enhance-watch": EnhanceWatch = true; break;
+                case "--audio-probe":
+                    AudioSeconds = i + 1 < args.Length && double.TryParse(args[i + 1], NumberStyles.Float, CultureInfo.InvariantCulture, out double s) ? s : 3;
+                    if (i + 1 < args.Length && !args[i + 1].StartsWith("--")) i++;
+                    break;
                 case "--fps": RecordRate = int.Parse(args[++i]); break;
                 case "--seconds": RecordSeconds = double.Parse(args[++i], CultureInfo.InvariantCulture); break;
                 case "--all": backends = ["all"]; models = ["all"]; break;
@@ -679,7 +685,8 @@ internal static class Program
                                       "                                           does the driver engage, through which size, cost per frame, close-ups with a picture\n" +
                                       "                       [--enhance-seconds S [--enhance-rate 60]]  ... and at a steady pace, for the slow end\n" +
                                       "                       [--enhance-watch]   ... and after rests; with --enhance-seconds: does the same input keep giving the same output\n" +
-                                      "                       [--gpu-priority]    with the GPU scheduling priority a session asks for");
+                                      "                       [--gpu-priority]    with the GPU scheduling priority a session asks for\n" +
+                                      "                   [--audio-probe [S]]  capture the sound of this process (it plays a tone too soft to hear)");
                     Environment.Exit(0);
                     break;
                 default: throw new ArgumentException($"unknown argument {args[i]}");
@@ -732,10 +739,10 @@ internal sealed unsafe class GpuImage : IDisposable
     public byte[] ReadBack()
     {
         if (_staging is null) throw new InvalidOperationException("not a render target");
-        lock (_gpu.Sync) _gpu.Context.CopyResource(_staging, _texture);
+        using (_gpu.UseContext()) _gpu.Context.CopyResource(_staging, _texture);
         _gpu.WaitForGpu();
         byte[] pixels = new byte[_width * _height * 4];
-        lock (_gpu.Sync)
+        using (_gpu.UseContext())
         {
             var map = _gpu.Context.Map(_staging, 0, MapMode.Read);
             fixed (byte* dst = pixels)

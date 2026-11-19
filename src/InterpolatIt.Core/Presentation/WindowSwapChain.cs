@@ -67,7 +67,7 @@ public sealed class WindowSwapChain : IDisposable
         width = Math.Max(1, width);
         height = Math.Max(1, height);
         if (width == Width && height == Height) return;
-        lock (_gpu.Sync)
+        using (_gpu.UseContext())
         {
             ReleaseBackBuffer();
             _gpu.Context.ClearState();

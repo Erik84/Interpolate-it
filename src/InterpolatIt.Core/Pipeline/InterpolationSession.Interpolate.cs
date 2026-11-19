@@ -170,7 +170,7 @@ public sealed partial class InterpolationSession
         {
             if (!enhanceOn || real.Enhanced) return;
             double t0 = Qpc.Now;
-            lock (ctx.Gpu.Sync) ctx.Gpu.Context.CopyResource(untouched!.Texture, real.Texture);
+            using (ctx.Gpu.UseContext()) ctx.Gpu.Context.CopyResource(untouched!.Texture, real.Texture);
             untouchedId = real.Id;
             double t1 = Qpc.Now;
             enhancer!.Process(real.Texture, real.Texture);

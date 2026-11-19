@@ -148,7 +148,7 @@ public sealed unsafe class VideoEnhancer : IDisposable
     {
         if (_enhance is not null && sourceWidth == SourceWidth && sourceHeight == SourceHeight
             && outputWidth == OutputWidth && outputHeight == OutputHeight) return;
-        lock (_gpu.Sync)
+        using (_gpu.UseContext())
         {
             Release();
             SourceWidth = sourceWidth;
@@ -255,7 +255,7 @@ public sealed unsafe class VideoEnhancer : IDisposable
     /// <summary>Lets go of the textures handed to <see cref="Process"/> so far (call when they are being replaced).</summary>
     public void ForgetSources()
     {
-        lock (_gpu.Sync)
+        using (_gpu.UseContext())
         {
             foreach (var view in _sourceViews.Values) view.Dispose();
             _sourceViews.Clear();
@@ -276,7 +276,7 @@ public sealed unsafe class VideoEnhancer : IDisposable
     public void Process(ID3D11Texture2D source, ID3D11Texture2D destination)
     {
         if (_enhance is null) throw new InvalidOperationException("Configure must be called first.");
-        lock (_gpu.Sync)
+        using (_gpu.UseContext())
         {
             _turn = (_turn + 1) % Lanes;
             var from = SourceView(source);
@@ -303,7 +303,7 @@ public sealed unsafe class VideoEnhancer : IDisposable
     {
         if (_enhance is null) throw new InvalidOperationException("Configure must be called first.");
         byte[] picture = TestPicture(InputWidth, InputHeight);
-        lock (_gpu.Sync)
+        using (_gpu.UseContext())
         {
             fixed (byte* p = picture)
                 _gpu.Context.UpdateSubresource(_work[0], 0, null, (nint)p, (uint)(InputWidth * 4), (uint)picture.Length);
@@ -329,7 +329,7 @@ public sealed unsafe class VideoEnhancer : IDisposable
         for (int i = 0; i < rounds; i++)
         {
             long t0 = Stopwatch.GetTimestamp();
-            lock (_gpu.Sync)
+            using (_gpu.UseContext())
             {
                 if (i == 0) Request(_enhance!, enhance);
                 Convert(_enhance!, _workInputs[0], _outputTargets[0]);
@@ -340,7 +340,7 @@ public sealed unsafe class VideoEnhancer : IDisposable
         times.Sort();
         milliseconds = times[times.Count / 2];
         byte[] result = _gpu.ReadBack(_outputs[0], OutputWidth, OutputHeight);
-        lock (_gpu.Sync) Request(_enhance!, true);
+        using (_gpu.UseContext()) Request(_enhance!, true);
         return result;
     }
 
@@ -418,7 +418,7 @@ public sealed unsafe class VideoEnhancer : IDisposable
 
     public void Dispose()
     {
-        lock (_gpu.Sync) Release();
+        using (_gpu.UseContext()) Release();
         _videoContext1.Dispose();
         _videoContext.Dispose();
         _videoDevice.Dispose();

@@ -71,6 +71,19 @@ public sealed partial class InterpolationSession : IDisposable
             throw new InvalidOperationException("There is no picture to record yet; wait until the window is being captured.");
         double refreshRate;
         lock (_ctx.Timing) refreshRate = 1.0 / _ctx.Clock.Period;
+        if (options is null)
+        {
+            // With the sound of the application whose window this is. While the overlay is up, the picture that is
+            // recorded runs behind the application's own by the playback delay; the sound does not, so it is put
+            // that much later in the file and the two belong together again there.
+            User32.GetWindowThreadProcessId(Options.TargetWindow, out uint processId);
+            bool delayed = _ctx.Stats.State == EngineState.Interpolating && !_ctx.Overlay.IsCloaked;
+            options = new RecordingOptions
+            {
+                AudioProcessId = Options.RecordSound ? processId : 0,
+                AudioDelay = delayed ? _ctx.Stats.DelayMs / 1000 : 0,
+            };
+        }
         _recorder?.Dispose();
         _recorder = Mp4Recorder.Start(_ctx.Gpu, path, width, height, refreshRate, options);
         _ctx.Recorder = _recorder;

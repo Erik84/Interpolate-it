@@ -270,6 +270,7 @@ public partial class MainWindow : Window
             string folder = Path.GetDirectoryName(done.Path) ?? "";
             string where = folder.StartsWith(videos, StringComparison.OrdinalIgnoreCase) ? "Videos" + folder[videos.Length..] : folder;
             _recordResult = $"Saved {Path.GetFileName(done.Path)} in {where}  ·  {done.Seconds:F1} s, {fps:F0} frames per second, {done.Codec}" +
+                            (done.Sound ? ", with sound" : done.SoundProblem is null ? ", without sound" : $", without sound: {done.SoundProblem}") +
                             (done.Dropped > 0 ? $", {done.Dropped} frames skipped" : "") +
                             (done.EndedBecause is null ? "" : $"  ·  ended because {done.EndedBecause}");
         }
@@ -462,7 +463,8 @@ public partial class MainWindow : Window
         RecordButton.Content = isRecording ? "Stop recording" : "Record";
         RecordText.Text = isRecording
             ? recording!.Active
-                ? $"Recording  {TimeSpan.FromSeconds(recording.Seconds):m\\:ss}  ·  {recording.Frames} frames" + (recording.Dropped > 0 ? $"  ·  {recording.Dropped} skipped" : "")
+                ? $"Recording  {TimeSpan.FromSeconds(recording.Seconds):m\\:ss}  ·  {recording.Frames} frames" + (recording.Dropped > 0 ? $"  ·  {recording.Dropped} skipped" : "") +
+                  (recording.Sound ? "  ·  with sound" : recording.SoundProblem is null ? "" : $"  ·  without sound: {recording.SoundProblem}")
                 : "Starting the encoder…"
             : _recordResult ?? _recordIdleText;
 

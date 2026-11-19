@@ -3,9 +3,13 @@
 #   2. puts the licence texts of everything that is shipped next to it,
 #   3. compiles installer\Interpolate-it.iss with Inno Setup 6 (winget install JRSoftware.InnoSetup).
 # The models (models\*.onnx, see README: "Build from source") must have been exported: they are part of the installer.
-#   tools\build-installer.ps1 [-SkipPublish]
+#   tools\build-installer.ps1 [-SkipPublish] [-Test]
+# -Test builds installer\output\Interpolate-it-Setup-test.exe: the same content under another identity. Use that
+# one to try installing and uninstalling on a PC where the application itself is installed; the real installer
+# in a second folder would take away the installed application's registration and shortcuts.
 param(
-    [switch]$SkipPublish
+    [switch]$SkipPublish,
+    [switch]$Test
 )
 
 $ErrorActionPreference = 'Stop'
@@ -71,9 +75,11 @@ $iscc = @(
 ) | Where-Object { $_ -and (Test-Path $_) } | Select-Object -First 1
 if (-not $iscc) { throw 'Inno Setup 6 (ISCC.exe) was not found: winget install JRSoftware.InnoSetup' }
 
-& $iscc "/DAppVersion=$version" "/DPublishDir=$publish" /Qp (Join-Path $root 'installer\Interpolate-it.iss')
+$defines = @("/DAppVersion=$version", "/DPublishDir=$publish")
+if ($Test) { $defines += '/DTestBuild' }
+& $iscc @defines /Qp (Join-Path $root 'installer\Interpolate-it.iss')
 if ($LASTEXITCODE -ne 0) { throw 'Inno Setup failed.' }
 
-$setup = Get-Item (Join-Path $output 'Interpolate-it-Setup.exe')
+$setup = Get-Item (Join-Path $output $(if ($Test) { 'Interpolate-it-Setup-test.exe' } else { 'Interpolate-it-Setup.exe' }))
 $files = Get-ChildItem $publish -Recurse -File | Where-Object Extension -ne '.pdb'
 '{0}: version {1}, {2:N0} MB ({3} files, {4:N0} MB installed)' -f $setup.FullName, $version, ($setup.Length / 1MB), $files.Count, (($files | Measure-Object Length -Sum).Sum / 1MB)

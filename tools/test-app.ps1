@@ -137,6 +137,17 @@ $appOverride = $AppPath
         "{0,-34} {1}  {2} {3}x{4}, {5} frames in {6:F2} s = {7:F1} fps" -f 'recording', $(if ([math]::Abs($fps - $rate) -lt 0.05 * $rate) { 'ok  ' } else { 'FAIL' }), $codec, $w, $h, $frames, [double]$duration, $fps
     }
     else { "{0,-34} ?     {1:N0} bytes written (no ffprobe to look inside)" -f 'recording', (Get-Item $recording).Length }
+    # Frame by frame: every frame a picture, the bar where its time says it is, and a sound track (the pattern
+    # plays nothing, so a silent one). The first moments are not judged: while the encoder starts, the engine
+    # can be late with a frame.
+    $python = Join-Path $root 'tools\export\.venv\Scripts\python.exe'
+    if ((Test-Path $recording) -and (Test-Path $python)) {
+        $checked = & $python -I (Join-Path $root 'tools\analyze_recording.py') $recording --expect-silence --skip-start 0.7 2>&1
+        $good = $LASTEXITCODE -eq 0
+        "{0,-34} {1}  {2}" -f 'recording, frame by frame', $(if ($good) { 'ok  ' } else { 'FAIL' }),
+            ((($checked | Select-String 'frames are black|^bar|^sound') | ForEach-Object { "$_".Trim() }) -join ' / ')
+        if (-not $good) { $checked | Select-String '^  - ' | ForEach-Object { "      $_" } }
+    }
 
     if (-not $appProcess.WaitForExit(40000)) { 'the application did not exit by itself'; Stop-Process -Id $appProcess.Id -Force }
     "exit code of the application: $($appProcess.ExitCode)"
